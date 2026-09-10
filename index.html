@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
 <title>런처</title>
 <style>
   :root{--bg:#111;--fg:#eee;--card:#222;--acc:#3b82f6}
@@ -29,13 +30,21 @@
   <button id="add">+ 현재 입력값 즐겨찾기</button>
   <button id="eng">검색엔진: <span id="en"></span></button>
 </div>
-<p><small>즐겨찾기 길게 누르거나 × 누르면 삭제</small></p>
+<p><small>× 누르면 삭제</small></p>
 <script>
+const VER='4';
 const ENGINES={구글:'https://www.google.com/search?q=',네이버:'https://m.search.naver.com/search.naver?query=',덕덕고:'https://duckduckgo.com/?q='};
+// 기본 즐겨찾기는 항상 코드 기준. 폰에는 직접 추가한 것(extra)과 숨긴 기본값(hidden)만 저장
 const DEF=[['유튜브','https://m.youtube.com'],['구글','https://www.google.com'],['네이버검색','https://m.search.naver.com/search.naver?query='],['펨코','https://www.fmkorea.com'],['원격','https://remotedesktop.google.com/access'],['클로드코드','https://claude.ai/code']];
 const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const set=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-let bms=get('bms3',DEF), eng=get('eng','구글');
+let extra=get('extra',[]), hidden=get('hidden',[]), eng=get('eng','구글');
+
+// 옛날 버전이 캐시돼 있으면 최신본으로 자동 교체
+fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{
+  const m=t.match(/const VER='(\d+)'/);
+  if(m&&m[1]!==VER&&!location.search.includes('v='+m[1])) location.replace(location.pathname+'?v='+m[1]);
+}).catch(()=>{});
 
 function go(s){
   s=s.trim(); if(!s) return;
@@ -45,22 +54,24 @@ function go(s){
   else url=ENGINES[eng]+encodeURIComponent(s);
   location.href=url;   // 새 창(window.open) 대신 같은 웹뷰에서 이동
 }
+function tile(n,u,del){
+  const a=document.createElement('a'); a.href=u; a.textContent=n;
+  const x=document.createElement('span'); x.className='x'; x.textContent='×';
+  x.onclick=e=>{e.preventDefault(); if(confirm(n+' 삭제?')){del();render()}};
+  a.appendChild(x); return a;
+}
 function render(){
   document.getElementById('en').textContent=eng;
   const g=document.getElementById('bm'); g.innerHTML='';
-  bms.forEach(([n,u],i)=>{
-    const a=document.createElement('a'); a.href=u; a.textContent=n;
-    const x=document.createElement('span'); x.className='x'; x.textContent='×';
-    x.onclick=e=>{e.preventDefault(); if(confirm(n+' 삭제?')){bms.splice(i,1);set('bms3',bms);render()}};
-    a.appendChild(x); g.appendChild(a);
-  });
+  DEF.filter(([,u])=>!hidden.includes(u)).forEach(([n,u])=>g.appendChild(tile(n,u,()=>{hidden.push(u);set('hidden',hidden)})));
+  extra.forEach(([n,u],i)=>g.appendChild(tile(n,u,()=>{extra.splice(i,1);set('extra',extra)})));
 }
 document.getElementById('f').onsubmit=e=>{e.preventDefault(); go(q.value)};
 document.getElementById('add').onclick=()=>{
   let u=q.value.trim(); if(!u) return alert('주소창에 먼저 입력');
   if(!/^https?:\/\//i.test(u)) u='https://'+u;
   const n=prompt('이름',u.replace(/^https?:\/\/(www\.|m\.)?/,'').split('/')[0]); if(!n) return;
-  bms.push([n,u]); set('bms3',bms); render();
+  extra.push([n,u]); set('extra',extra); render();
 };
 document.getElementById('eng').onclick=()=>{
   const ks=Object.keys(ENGINES); eng=ks[(ks.indexOf(eng)+1)%ks.length]; set('eng',eng); render();
