@@ -32,10 +32,10 @@
 <p><small>즐겨찾기 길게 누르거나 × 누르면 삭제</small></p>
 <script>
 const ENGINES={구글:'https://www.google.com/search?q=',네이버:'https://search.naver.com/search.naver?query=',덕덕고:'https://duckduckgo.com/?q='};
-const DEF=[['유튜브','https://m.youtube.com'],['구글','https://www.google.com'],['네이버','https://m.naver.com'],['나무위키','https://namu.wiki'],['디시','https://m.dcinside.com'],['유튜브뮤직','https://music.youtube.com']];
+const DEF=[['유튜브','https://m.youtube.com'],['구글','https://www.google.com'],['네이버','https://m.naver.com'],['펨코','https://www.fmkorea.com'],['디시','https://m.dcinside.com'],['원격','https://remotedesktop.google.com/access']];
 const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const set=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-let bms=get('bms',DEF), eng=get('eng','구글');
+let bms=get('bms2',DEF), eng=get('eng','구글');
 
 function go(s){
   s=s.trim(); if(!s) return;
@@ -51,7 +51,7 @@ function render(){
   bms.forEach(([n,u],i)=>{
     const a=document.createElement('a'); a.href=u; a.textContent=n;
     const x=document.createElement('span'); x.className='x'; x.textContent='×';
-    x.onclick=e=>{e.preventDefault(); if(confirm(n+' 삭제?')){bms.splice(i,1);set('bms',bms);render()}};
+    x.onclick=e=>{e.preventDefault(); if(confirm(n+' 삭제?')){bms.splice(i,1);set('bms2',bms);render()}};
     a.appendChild(x); g.appendChild(a);
   });
 }
@@ -60,7 +60,7 @@ document.getElementById('add').onclick=()=>{
   let u=q.value.trim(); if(!u) return alert('주소창에 먼저 입력');
   if(!/^https?:\/\//i.test(u)) u='https://'+u;
   const n=prompt('이름',u.replace(/^https?:\/\/(www\.|m\.)?/,'').split('/')[0]); if(!n) return;
-  bms.push([n,u]); set('bms',bms); render();
+  bms.push([n,u]); set('bms2',bms); render();
 };
 document.getElementById('eng').onclick=()=>{
   const ks=Object.keys(ENGINES); eng=ks[(ks.indexOf(eng)+1)%ks.length]; set('eng',eng); render();
