@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>런처</title>
+<style>
+  :root{--bg:#111;--fg:#eee;--card:#222;--acc:#3b82f6}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;padding:16px}
+  form{display:flex;gap:8px;margin-bottom:16px}
+  input{flex:1;font-size:18px;padding:14px;border-radius:10px;border:0;background:var(--card);color:var(--fg)}
+  button{font-size:18px;padding:14px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+  .grid a{display:block;padding:18px 8px;text-align:center;background:var(--card);border-radius:10px;color:var(--fg);text-decoration:none;font-size:16px;position:relative}
+  .grid a .x{position:absolute;top:2px;right:8px;opacity:.5;font-size:14px}
+  .row{display:flex;gap:8px;margin-top:16px}
+  .row button{flex:1;background:var(--card);font-size:15px}
+  small{opacity:.5}
+</style>
+</head>
+<body>
+<form id="f">
+  <input id="q" placeholder="주소 또는 검색어" autocomplete="off" autocapitalize="off">
+  <button>이동</button>
+</form>
+<div class="grid" id="bm"></div>
+<div class="row">
+  <button id="add">+ 현재 입력값 즐겨찾기</button>
+  <button id="eng">검색엔진: <span id="en"></span></button>
+</div>
+<p><small>즐겨찾기 길게 누르거나 × 누르면 삭제</small></p>
+<script>
+const ENGINES={구글:'https://www.google.com/search?q=',네이버:'https://search.naver.com/search.naver?query=',덕덕고:'https://duckduckgo.com/?q='};
+const DEF=[['유튜브','https://m.youtube.com'],['구글','https://www.google.com'],['네이버','https://m.naver.com'],['나무위키','https://namu.wiki'],['디시','https://m.dcinside.com'],['유튜브뮤직','https://music.youtube.com']];
+const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const set=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+let bms=get('bms',DEF), eng=get('eng','구글');
+
+function go(s){
+  s=s.trim(); if(!s) return;
+  let url;
+  if(/^https?:\/\//i.test(s)) url=s;
+  else if(/^[^\s]+\.[a-z]{2,}(\/.*)?$/i.test(s)) url='https://'+s;
+  else url=ENGINES[eng]+encodeURIComponent(s);
+  location.href=url;   // 새 창(window.open) 대신 같은 웹뷰에서 이동
+}
+function render(){
+  document.getElementById('en').textContent=eng;
+  const g=document.getElementById('bm'); g.innerHTML='';
+  bms.forEach(([n,u],i)=>{
+    const a=document.createElement('a'); a.href=u; a.textContent=n;
+    const x=document.createElement('span'); x.className='x'; x.textContent='×';
+    x.onclick=e=>{e.preventDefault(); if(confirm(n+' 삭제?')){bms.splice(i,1);set('bms',bms);render()}};
+    a.appendChild(x); g.appendChild(a);
+  });
+}
+document.getElementById('f').onsubmit=e=>{e.preventDefault(); go(q.value)};
+document.getElementById('add').onclick=()=>{
+  let u=q.value.trim(); if(!u) return alert('주소창에 먼저 입력');
+  if(!/^https?:\/\//i.test(u)) u='https://'+u;
+  const n=prompt('이름',u.replace(/^https?:\/\/(www\.|m\.)?/,'').split('/')[0]); if(!n) return;
+  bms.push([n,u]); set('bms',bms); render();
+};
+document.getElementById('eng').onclick=()=>{
+  const ks=Object.keys(ENGINES); eng=ks[(ks.indexOf(eng)+1)%ks.length]; set('eng',eng); render();
+};
+render();
+</script>
+</body>
+</html>
